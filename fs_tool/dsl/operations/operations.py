@@ -67,7 +67,7 @@ class CountOp(BaseOp):
 
     @property
     def sql_op_exp(self) -> str:
-        return "COUNT()"
+        return "COUNT(1)"
 
 
 class RatioOp(CompoundBaseOp):
