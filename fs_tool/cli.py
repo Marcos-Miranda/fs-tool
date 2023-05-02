@@ -5,6 +5,7 @@ from fs_tool.aws_helper import (
     delete_feature_group,
     list_feature_groups,
     describe_feature_group,
+    calculate_features,
 )
 import traceback
 import os
@@ -79,6 +80,30 @@ def create_feat_group(ctx):
     except Exception:
         click.echo(traceback.format_exc())
         click.secho("Error: The feature group could not be created.", fg="red")
+
+
+@cli.command()
+@click.pass_context
+def calculate_ingest_feats(ctx):
+    """Calculate the features defined in the CONFIGFILE and ingest them into the Feature Store."""
+
+    try:
+        parser = pickle.load(open(f"{ctx.obj['path']}/parser.pkl", "rb"))
+    except Exception:
+        click.secho(f"Error: No compilation for the exec-id '{ctx.obj['id']}' has been done yet.", fg="red")
+        sys.exit()
+
+    try:
+        _ = describe_feature_group(parser.fg_name)
+    except Exception:
+        click.secho("Error: The Feature Group has not been created yet.", fg="red")
+        sys.exit()
+
+    try:
+        calculate_features(parser)
+    except Exception:
+        click.echo(traceback.format_exc())
+        click.secho("Error: Could not calculate the features.", fg="red")
 
 
 @cli.command()

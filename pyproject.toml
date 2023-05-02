@@ -19,6 +19,7 @@ mypy = "^1.2.0"
 black = "^23.3.0"
 ipykernel = "^6.22.0"
 pyspark = "3.2.*"
+sagemaker-feature-store-pyspark-3-2 = "^1.1.1"
 
 [tool.black]
 line-length = 119

@@ -1,6 +1,9 @@
 from typing import List, Dict, Any
+import os
+import time
 import boto3
 from sagemaker.session import Session
+from sagemaker.spark.processing import PySparkProcessor
 from sagemaker.feature_store.feature_group import FeatureGroup
 from sagemaker.feature_store.feature_definition import (
     FeatureDefinition,
@@ -12,7 +15,8 @@ from fs_tool.dsl.compilation import Parser
 
 REGION_NAME = Session().boto_region_name
 BUCKET_NAME = Session().default_bucket()
-PREFIX = "feature-store"
+FS_PREFIX = "feature-store"
+QUERIES_PREFIX = "feature_calculation/queries"
 boto_session = boto3.Session(region_name=REGION_NAME)
 
 
@@ -65,7 +69,7 @@ def create_feature_group(parser: Parser) -> Dict[str, Any]:
 
     feature_group.create(
         description=parser.fg_description,
-        s3_uri=f"s3://{BUCKET_NAME}/{PREFIX}",
+        s3_uri=f"s3://{BUCKET_NAME}/{FS_PREFIX}",
         record_identifier_name="_".join(parser.fg_entity_columns),
         event_time_feature_name=parser.fg_time_column,
         enable_online_store=True,
@@ -73,6 +77,62 @@ def create_feature_group(parser: Parser) -> Dict[str, Any]:
     )
 
     return feature_group.describe()
+
+
+def get_feature_calculation_query(parser: Parser) -> str:
+    """Create the query that calculates the features defined in the Feature Group."""
+
+    return f"""
+        SELECT
+            {"_".join(parser.fg_entity_columns)},
+            {parser.fg_time_column},
+            {", ".join(feat.query for feat in parser.features)}
+        FROM table
+    """
+
+
+def calculate_features(parser: Parser) -> None:
+    """Run the processing script that calculates the features and ingests them into the Feature Store."""
+
+    # Create the query and save it to S3
+    query = get_feature_calculation_query(parser)
+    query_file_name = parser.fg_name + "_" + time.strftime("%Y-%m-%d-%H-%M-%S", time.gmtime()) + ".txt"
+    s3 = boto3.resource("s3")
+    obj = s3.Object(bucket_name=BUCKET_NAME, key=f"{QUERIES_PREFIX}/{query_file_name}")
+    obj.put(Body=query)
+
+    # Configure and run the PySpark processing job that calculates the features and puts them in the Feature Store
+    spark_processor = PySparkProcessor(
+        base_job_name="sm-spark-feat-calc",
+        framework_version="3.2",
+        role=get_role_arn(),
+        instance_count=1,
+        instance_type="ml.t3.large",
+        max_runtime_in_seconds=1200,
+    )
+    configuration = [
+        {
+            "Classification": "spark-defaults",
+            "Properties": {"spark.executor.memory": "6g", "spark.executor.cores": "1"},
+        }
+    ]
+    spark_processor.run(
+        submit_app=os.path.join(os.path.dirname(__file__), "processing_script.py"),
+        arguments=[
+            "--s3_dataset_uri",
+            parser.ds_uri,
+            "--entity_columns",
+            str(parser.fg_entity_columns),
+            "--s3_query_bucket",
+            BUCKET_NAME,
+            "--s3_query_key",
+            f"{QUERIES_PREFIX}/{query_file_name}",
+            "--feat_group_arn",
+            describe_feature_group(parser.fg_name)["FeatureGroupArn"],
+        ],
+        configuration=configuration,
+        spark_event_logs_s3_uri=f"s3://{BUCKET_NAME}/feature_calculation/spark_event_logs",
+    )
 
 
 def list_feature_groups() -> Dict[str, Any]:

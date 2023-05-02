@@ -1511,6 +1511,17 @@ scipy = ["scipy (==1.7.3)"]
 test = ["Jinja2 (==3.0.3)", "PyYAML (==5.4.1)", "apache-airflow (==2.5.1)", "apache-airflow-providers-amazon (==7.2.1)", "attrs (==22.1.0)", "awslogs (==0.14.0)", "black (==22.3.0)", "cloudpickle (==2.2.1)", "contextlib2 (==21.6.0)", "coverage (>=5.2,<6.2)", "docker (>=5.0.2,<7.0.0)", "docker-compose (==1.29.2)", "fabric (==2.6.0)", "flake8 (==4.0.1)", "mock (==4.0.3)", "pandas (>=1.3.5,<1.5)", "pytest (==6.2.5)", "pytest-cov (==3.0.0)", "pytest-rerunfailures (==10.2)", "pytest-timeout (==2.1.0)", "pytest-xdist (==2.4.0)", "requests (==2.27.1)", "sagemaker-experiments (==0.1.35)", "scikit-learn (==1.0.2)", "scipy (==1.7.3)", "stopit (==1.1.2)", "tox (==3.24.5)", "urllib3 (==1.26.8)"]
 
 [[package]]
+name = "sagemaker-feature-store-pyspark-3-2"
+version = "1.1.1"
+description = "Amazon SageMaker FeatureStore PySpark Bindings"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "sagemaker_feature_store_pyspark_3.2-1.1.1.tar.gz", hash = "sha256:de2226bdaf07d42ffc51b4369159aa7d3127d1dbed8c1457e9e3123f971eadf2"},
+]
+
+[[package]]
 name = "schema"
 version = "0.7.5"
 description = "Simple data validation library"
@@ -1690,4 +1701,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.1"
-content-hash = "2f181f37612c41f1582b5817f6464174129b03ee383f9cc796b383891602088a"
+content-hash = "e3f080d135c0c4de1699bb2463f9edeb1c9a8712d4c8af3cd5a7514e018f7e00"
