@@ -12,6 +12,7 @@ class BaseOp(ABC):
     time_column: str
     partition_by: List[str]
     window: str
+    condition: Optional[str]
 
     subclasses: List[Type["BaseOp"]] = []
 
@@ -60,6 +61,7 @@ class CompoundBaseOp:
     time_column: str
     partition_by: List[str]
     windows: List[str]
+    condition: Optional[str]
 
     subclasses: List[Type["CompoundBaseOp"]] = []
 
@@ -85,7 +87,11 @@ class CompoundBaseOp:
         for gp in groups:
             for op_cls in BaseOp.subclasses:
                 if gp is not None and op_cls.reg_exp().fullmatch(gp):
-                    ops.append(op_cls(gp, self.time_column, self.partition_by, self.windows[window_idx]))  # type: ignore # noqa
+                    ops.append(
+                        op_cls(
+                            gp, self.time_column, self.partition_by, self.windows[window_idx], self.condition
+                        )  # type: ignore
+                    )
                     window_idx += 1
         return ops
 

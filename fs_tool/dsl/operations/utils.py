@@ -16,5 +16,6 @@ def get_operation_query(operation) -> str:
     return (
         f"{operation.sql_op_exp} OVER (PARTITION BY {', '.join(operation.partition_by)} "
         f"ORDER BY CAST({operation.time_column} AS TIMESTAMP) "
-        f"RANGE BETWEEN INTERVAL {operation.sql_window_exp} PRECEDING AND CURRENT ROW)"
+        f"RANGE BETWEEN CAST(INTERVAL {operation.sql_window_exp} AS INTERVAL SECOND) PRECEDING "
+        "AND INTERVAL '1' SECOND PRECEDING)"
     )

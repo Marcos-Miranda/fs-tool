@@ -16,13 +16,18 @@ class SumOp(BaseOp):
             Columns by which the window function is partitioned.
         window:
             DSL expression that defines the interval or window.
+        condition:
+            SQL logical expression to filter the rows before calculating the feature.
     """
 
-    def __init__(self, exp: str, time_column: str, partition_by: List[str], window: str) -> None:
+    def __init__(
+        self, exp: str, time_column: str, partition_by: List[str], window: str, condition: Optional[str] = None
+    ) -> None:
         self.exp = exp
         self.time_column = time_column
         self.partition_by = partition_by
         self.window = window
+        self.condition = condition
 
     @staticmethod
     def reg_exp() -> re.Pattern:
@@ -34,7 +39,7 @@ class SumOp(BaseOp):
 
     @property
     def sql_op_exp(self) -> str:
-        return f"SUM({self.op_column})"
+        return f"SUM({self.op_column})" if not self.condition else f"SUM(IF({self.condition}, {self.op_column}, 0))"
 
 
 class CountOp(BaseOp):
@@ -49,13 +54,18 @@ class CountOp(BaseOp):
             Columns by which the window function is partitioned.
         window:
             DSL expression that defines the interval or window.
+        condition:
+            SQL logical expression to filter the rows before calculating the feature.
     """
 
-    def __init__(self, exp: str, time_column: str, partition_by: List[str], window: str) -> None:
+    def __init__(
+        self, exp: str, time_column: str, partition_by: List[str], window: str, condition: Optional[str] = None
+    ) -> None:
         self.exp = exp
         self.time_column = time_column
         self.partition_by = partition_by
         self.window = window
+        self.condition = condition
 
     @staticmethod
     def reg_exp() -> re.Pattern:
@@ -67,7 +77,7 @@ class CountOp(BaseOp):
 
     @property
     def sql_op_exp(self) -> str:
-        return "COUNT(1)"
+        return "COUNT(1)" if not self.condition else f"COUNT(IF({self.condition}, 1, 0))"
 
 
 class RatioOp(CompoundBaseOp):
@@ -82,13 +92,18 @@ class RatioOp(CompoundBaseOp):
             Columns by which the window function is partitioned.
         windows:
             DSL expressions that define the interval or window for both numerator and denominator.
+        condition:
+            SQL logical expression to filter the rows before calculating the feature.
     """
 
-    def __init__(self, exp: str, time_column: str, partition_by: List[str], windows: List[str]) -> None:
+    def __init__(
+        self, exp: str, time_column: str, partition_by: List[str], windows: List[str], condition: Optional[str] = None
+    ) -> None:
         self.exp = exp
         self.time_column = time_column
         self.partition_by = partition_by
         self.windows = windows
+        self.condition = condition
 
     @staticmethod
     def reg_exp() -> re.Pattern:

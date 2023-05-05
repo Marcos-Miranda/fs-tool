@@ -4,6 +4,7 @@ import re
 from typing import Union, List
 import yaml
 import awswrangler as wr
+import sqlglot
 
 from fs_tool.dsl.operations.operations import BaseOp, CompoundBaseOp
 
@@ -45,6 +46,23 @@ class Feature:
     def __post_init__(self):
         self.name = create_feature_name(self.operation, self.cfg_name)
         self.query = self.operation.operation_query + f" AS {self.name}"
+
+
+def validate_condition(condition: str, dataset_columns: List[str]) -> None:
+    """Check if the condition is a valid SQL logical expression and if the identifiers."""
+
+    try:
+        _ = sqlglot.transpile(condition)
+    except Exception as e:
+        raise ValueError(f'The condition "{condition}" is not a valid SQL logical expression.') from e
+
+    for identifier in (
+        ident.name for ident in sqlglot.parse_one(condition).find_all(sqlglot.exp.Identifier)  # type: ignore
+    ):
+        if identifier not in dataset_columns:
+            raise ValueError(
+                f'The identifier "{identifier}" of the condition "{condition}" is not a column of the dataset.'
+            )
 
 
 class Parser:
@@ -124,10 +142,15 @@ class Parser:
                 name = str(feat["name"]).lower()
                 description = str(feat["description"])
                 operation_exp = str(feat["operation"])
+                condition = str(feat["condition"]) if feat["condition"] else feat["condition"]
             except Exception as e:
                 raise ValueError(
-                    "Error: the feature definition must provide the name, description and operation of the feature."
+                    "Error: the feature definition must provide the name, description, operation and condition "
+                    "of the feature."
                 ) from e
+
+            if condition:
+                validate_condition(condition, self._ds_head.columns.to_list())
 
             operation_class = None
             for op_cls in BaseOp.subclasses + CompoundBaseOp.subclasses:
@@ -138,7 +161,9 @@ class Parser:
 
             windows = self.fg_windows if issubclass(operation_class, BaseOp) else self.fg_cpd_windows
             for window in windows:
-                operation = operation_class(operation_exp, self.fg_time_column, self.fg_entity_columns, window)  # type: ignore # noqa
+                operation = operation_class(
+                    operation_exp, self.fg_time_column, self.fg_entity_columns, window, condition
+                )  # type: ignore
                 self.features.append(Feature(name, description, operation))
 
     def validate_feature_names(self) -> None:
