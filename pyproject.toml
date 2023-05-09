@@ -25,6 +25,9 @@ sagemaker-feature-store-pyspark-3-2 = "^1.1.1"
 [tool.black]
 line-length = 119
 
+[tool.mypy]
+ignore_missing_imports = true
+
 [tool.poetry.scripts]
 fstool = "fs_tool.cli:cli"
 

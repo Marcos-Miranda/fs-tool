@@ -4,8 +4,8 @@ import re
 def get_window_expression(window: str) -> str:
     """Transform a window element into a SQL expression."""
 
-    numeric_part = re.search("\d+", window).group(0)  # type: ignore
-    alpha_part = re.search("\D", window).group(0).lower()  # type: ignore
+    numeric_part = re.search(r"\d+", window).group(0)  # type: ignore
+    alpha_part = re.search(r"\D", window).group(0).lower()  # type: ignore
     alpha_to_unity = {"d": "DAY", "h": "HOUR"}
     return f"'{numeric_part}' {alpha_to_unity[alpha_part]}"
 
